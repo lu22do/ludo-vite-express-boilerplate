@@ -2,13 +2,18 @@ import "./App.css";
 
 import { useState, useEffect } from "react";
 
-import reactLogo from "./assets/react.svg";
-
 function App() {
   const [count, setCount] = useState(0);
   const [serverMsg, setServerMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // new form state
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState<string>("");
+
+  // items list state
+  const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
     let mounted = true;
@@ -39,6 +44,54 @@ function App() {
     };
   }, []);
 
+  const writeDB = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const body = {
+        name,
+        quantity: Number(quantity) || 0,
+      };
+
+      const res = await fetch("/api/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.message ?? `Server returned ${res.status}`);
+      }
+
+      const created = await res.json();
+      setServerMsg(`Created item: ${created.name} (id: ${created._id ?? "n/a"})`);
+      // clear form
+      setName("");
+      setQuantity("");
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to create item");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchItems = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/items");
+      if (!res.ok) throw new Error(`Server returned ${res.status}`);
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to load items");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="App">
       <div>
@@ -46,7 +99,7 @@ function App() {
           <img src="/vite.svg" className="logo" alt="Vite logo" />
         </a>
         <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
+          <img src="react.svg" className="logo react" alt="React logo" />
         </a>
       </div>
       <h1>Vite + React</h1>
@@ -67,6 +120,58 @@ function App() {
               Server says:{" "}
               <strong>{serverMsg ?? "no message"}</strong>
             </p>
+          )}
+        </div>
+
+        {/* new: add item form */}
+        <div style={{ marginTop: 16 }}>
+          <div>
+            <label>
+              Name:{" "}
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Item name"
+              />
+            </label>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <label>
+              Quantity:{" "}
+              <input
+                type="number"
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                placeholder="0"
+              />
+            </label>
+          </div>
+          <div style={{ marginTop: 8 }}>
+            <button onClick={() => writeDB()} disabled={loading || !name}>
+              Add item
+            </button>
+            <button
+              onClick={() => fetchItems()}
+              style={{ marginLeft: 8 }}
+              disabled={loading}
+            >
+              Load items
+            </button>
+          </div>
+        </div>
+
+        {/* items list */}
+        <div style={{ marginTop: 16 }}>
+          {items.length === 0 ? (
+            <p>No items loaded</p>
+          ) : (
+            <ul>
+              {items.map((it) => (
+                <li key={it._id ?? `${it.name}-${it.quantity}`}>
+                  {it.name} — {it.quantity}
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>
