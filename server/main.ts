@@ -2,7 +2,7 @@ import express from "express";
 import 'dotenv/config';
 import mongoose from "mongoose";
 import ViteExpress from "vite-express";
-import Item from "./models/Item";
+import Item from "./models/Item.js";
 
 const app = express();
 // parse JSON and URL-encoded bodies so req.body is populated
