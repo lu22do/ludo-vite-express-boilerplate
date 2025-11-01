@@ -1,6 +1,9 @@
-import { useState, useEffect } from "react";
+import "./css/index.css";
+
+import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom/client";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
-import ItemCard from "./ItemCard";
+import ItemCard from "./components/ItemCard";
 import ItemPage from "./pages/ItemPage";
 
 function App() {
@@ -211,3 +214,11 @@ function App() {
 }
 
 export default App;
+
+// render merged entry (replaces client/main.tsx)
+const rootEl = document.getElementById("root") as HTMLElement;
+ReactDOM.createRoot(rootEl).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
