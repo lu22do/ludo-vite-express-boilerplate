@@ -47,6 +47,55 @@ app.post('/api/items', async (req, res) => {
   }
 });
 
+// DELETE item by id
+app.delete('/api/items/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    const deleted = await Item.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json({ message: "Item deleted", _id: deleted._id });
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Error deleting item" });
+  }
+});
+
+// NEW: Get single item by id
+app.get('/api/items/:id', async (req, res) => {
+  const id = req.params.id;
+  try {
+    const item = await Item.findById(id);
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json(item);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Error fetching item" });
+  }
+});
+
+// NEW: Update item by id
+app.put('/api/items/:id', async (req, res) => {
+  const id = req.params.id;
+  const update: any = {};
+  if (req.body.name !== undefined) update.name = req.body.name;
+  if (req.body.quantity !== undefined) update.quantity = req.body.quantity;
+
+  try {
+    const updated = await Item.findByIdAndUpdate(id, update, { new: true, runValidators: true });
+    if (!updated) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json(updated);
+  } catch (err) {
+    console.error(err);
+    res.status(400).json({ message: "Error updating item" });
+  }
+});
+
 ViteExpress.listen(app, 3000, () =>
   console.log("Server is listening on port 3000..."),
 );

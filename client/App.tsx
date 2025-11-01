@@ -1,4 +1,7 @@
 import { useState, useEffect } from "react";
+import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
+import ItemCard from "./ItemCard";
+import ItemPage from "./pages/ItemPage";
 
 function App() {
   const [count, setCount] = useState(0);
@@ -90,93 +93,120 @@ function App() {
     }
   };
 
+  // new: delete an item by id
+  const deleteItem = async (id?: string) => {
+    if (!id) {
+      setError("Missing item id");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/items/${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.message ?? `Server returned ${res.status}`);
+      }
+      setServerMsg(`Deleted item: ${id}`);
+      setItems((prev) => prev.filter((it) => it._id !== id));
+    } catch (err: any) {
+      setError(err?.message ?? "Failed to delete item");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src="react.svg" className="logo react" alt="React logo" />
-        </a>
+    <BrowserRouter>
+      <div className="App">
+        <div>
+          <a href="https://vitejs.dev" target="_blank">
+            <img src="/vite.svg" className="logo" alt="Vite logo" />
+          </a>
+          <a href="https://reactjs.org" target="_blank">
+            <img src="react.svg" className="logo react" alt="React logo" />
+          </a>
+        </div>
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <>
+                <h1>Vite + React</h1>
+                <div className="card">
+                  <button onClick={() => setCount((count) => count + 1)}>
+                    count is {count}
+                  </button>
+
+                  {/* server API result */}
+                  <div style={{ marginTop: 16 }}>
+                    {loading && <p>Loading server message...</p>}
+                    {error && <p style={{ color: "red" }}>Error: {error}</p>}
+                    {!loading && !error && (
+                      <p>
+                        Server says: <strong>{serverMsg ?? "no message"}</strong>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* new: add item form */}
+                  <div style={{ marginTop: 16 }}>
+                    <div>
+                      <label>
+                        Name:{" "}
+                        <input
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
+                          placeholder="Item name"
+                        />
+                      </label>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <label>
+                        Quantity:{" "}
+                        <input
+                          type="number"
+                          value={quantity}
+                          onChange={(e) => setQuantity(e.target.value)}
+                          placeholder="0"
+                        />
+                      </label>
+                    </div>
+                    <div style={{ marginTop: 8 }}>
+                      <button onClick={() => writeDB()} disabled={loading || !name}>
+                        Add item
+                      </button>
+                      <button
+                        onClick={() => fetchItems()}
+                        style={{ marginLeft: 8 }}
+                        disabled={loading}
+                      >
+                        Load items
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* items list */}
+                  <div style={{ marginTop: 16 }}>
+                    {items.length === 0 ? (
+                      <p>No items loaded</p>
+                    ) : (
+                      <div>
+                        {items.map((it) => (
+                          <ItemCard key={it._id ?? `${it.name}-${it.quantity}`} item={it} />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            }
+          />
+          <Route path="/items/:id" element={<ItemPage />} />
+        </Routes>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-
-        {/* server API result */}
-        <div style={{ marginTop: 16 }}>
-          {loading && <p>Loading server message...</p>}
-          {error && <p style={{ color: "red" }}>Error: {error}</p>}
-          {!loading && !error && (
-            <p>
-              Server says:{" "}
-              <strong>{serverMsg ?? "no message"}</strong>
-            </p>
-          )}
-        </div>
-
-        {/* new: add item form */}
-        <div style={{ marginTop: 16 }}>
-          <div>
-            <label>
-              Name:{" "}
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Item name"
-              />
-            </label>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <label>
-              Quantity:{" "}
-              <input
-                type="number"
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                placeholder="0"
-              />
-            </label>
-          </div>
-          <div style={{ marginTop: 8 }}>
-            <button onClick={() => writeDB()} disabled={loading || !name}>
-              Add item
-            </button>
-            <button
-              onClick={() => fetchItems()}
-              style={{ marginLeft: 8 }}
-              disabled={loading}
-            >
-              Load items
-            </button>
-          </div>
-        </div>
-
-        {/* items list */}
-        <div style={{ marginTop: 16 }}>
-          {items.length === 0 ? (
-            <p>No items loaded</p>
-          ) : (
-            <ul>
-              {items.map((it) => (
-                <li key={it._id ?? `${it.name}-${it.quantity}`}>
-                  {it.name} — {it.quantity}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
+    </BrowserRouter>
   );
 }
 
